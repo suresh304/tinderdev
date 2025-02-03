@@ -10,7 +10,7 @@ const userAuth = async (req,res,next)=>{
         if(!token){
             throw new Error("token expired.....");
         }
-        const decodedObj = jwt.verify(token,'tinderdev')
+        const decodedObj = jwt.verify(token,process.env.JWT_SECRET)
         console.log(decodedObj)
         const user =  await User.findById(decodedObj._id)
         if(!user){

@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require('express')
 const connectDB = require('./configs/config')
 const User = require('./models/user')
@@ -10,7 +11,6 @@ const { profileRouter } = require('./Routers/Profile')
 const { requestRouter } = require('./Routers/Requests')
 const { userRouter } = require('./Routers/User')
 const cors = require('cors')
-
 const PORT = 3001
 app.use(express.json())
 app.use(cookieParser())
