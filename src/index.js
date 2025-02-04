@@ -10,7 +10,10 @@ const { authRouter } = require('./Routers/Auth')
 const { profileRouter } = require('./Routers/Profile')
 const { requestRouter } = require('./Routers/Requests')
 const { userRouter } = require('./Routers/User')
+const {chatRouter} = require('./Routers/chat')
+
 const cors = require('cors')
+const { initialiseSocketConnection } = require('./utils/socket')
 const PORT = 3001
 app.use(express.json())
 app.use(cookieParser())
@@ -23,20 +26,17 @@ app.use('/',authRouter)
 app.use('/',profileRouter)
 app.use('/',requestRouter)
 app.use('/',userRouter)
+app.use('/',chatRouter)
 
 
 
 
 
 
-
-
-
-
-
-
-
-
+const http = require('http')
+const server = http.createServer(app)
+const socket = require('socket.io')
+initialiseSocketConnection(server)
 
 
 
@@ -44,7 +44,7 @@ app.use('/',userRouter)
 connectDB()
     .then(() => {
         console.log("DB connected successfully");
-        app.listen(PORT, () => {
+        server.listen(PORT, () => {
             console.log("server is listening at ", PORT);
         });
     })
