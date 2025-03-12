@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema({
     },
     skills:{
         type:[String]
+    },
+    about:{
+        type: String,
+        maxlength: 200,
+        trim: true
     }
 })
 

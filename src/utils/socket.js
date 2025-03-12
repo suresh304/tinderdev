@@ -58,12 +58,12 @@ const initialiseSocketConnection = (server) => {
                     })
                 }
 
-                chat.messages.push({
-                    senderId: userId,
-                    recieverId: targetUser,
-                    text: message
+                // chat.messages.push({
+                //     senderId: userId,
+                //     recieverId: targetUser,
+                //     text: message
 
-                })
+                // })
                 //   const data=      await chat.save().populate("messages.senderId","firsrName lastName photoUrl").populate("messages.recieverId","firsrName lastName photoUrl")
 
 
@@ -91,12 +91,6 @@ const initialiseSocketConnection = (server) => {
 
 
         })
-
-
-
-
-
-
         socket.on("disconnect", () => {
 
         })
