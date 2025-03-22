@@ -95,6 +95,12 @@ const initialiseSocketConnection = (server) => {
 
         })
 
+        socket.on("typing", ({data,userId,targetUser}) => {
+            const room = [userId, targetUser].sort().join('$')
+          console.log("this is typing--------->",data)
+          io.to(room).emit('typingStatusRecieved', {data,senderId:userId,recieverId:targetUser})
+        })
+
     })
 }
 
