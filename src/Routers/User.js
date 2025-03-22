@@ -36,7 +36,7 @@ userRouter.get('/user/connections', userAuth, async (req, res) => {
 
             ]
 
-        }).populate('toUserId', ['firstName', 'lastName']).populate('fromUserId', ['firstName', 'lastName'])
+        }).populate('toUserId', ['firstName', 'lastName','photoUrl']).populate('fromUserId', ['firstName', 'lastName','photoUrl'])
 
 
         const data = connections?.map((connection) => {
