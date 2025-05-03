@@ -31,11 +31,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
 });
 
-app.use('/',authRouter)
-app.use('/',profileRouter)
-app.use('/',requestRouter)
-app.use('/',userRouter)
-app.use('/',chatRouter)
+
 app.get('/test', (req, res) => {
     res.send(`
       <!DOCTYPE html>
@@ -103,6 +99,12 @@ app.get('/test', (req, res) => {
       </html>
     `);
   });
+app.use('/',authRouter)
+app.use('/',profileRouter)
+app.use('/',requestRouter)
+app.use('/',userRouter)
+app.use('/',chatRouter)
+
   
 
 
