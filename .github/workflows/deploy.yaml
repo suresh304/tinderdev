@@ -1,0 +1,24 @@
+name: Deploy Backend to Azure VM
+
+on:
+  push:
+    branches:
+      - main  # Trigger deployment on main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.AZURE_HOST }}
+          username: ${{ secrets.AZURE_USER }}
+          key: ${{ secrets.AZURE_SSH_KEY }}
+          script: |
+            chmod +x /home/azureuser/deploy-backend.sh
+            /home/azureuser/deploy-backend.sh
