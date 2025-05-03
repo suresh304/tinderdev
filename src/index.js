@@ -121,7 +121,7 @@ initialiseSocketConnection(server)
 connectDB()
     .then(() => {
         console.log("DB connected successfully");
-        server.listen(PORT, () => {
+        server.listen(PORT,'0.0.0.0', () => {
             console.log("server is listening at ", PORT);
         });
     })
