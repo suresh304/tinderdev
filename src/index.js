@@ -31,14 +31,12 @@ app.use(cors({
 //   res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
 // });
 
-app.get('/test', (req, res) => {
-    res.send('<h1>Hello World</h1>');
-  });
-// app.use('/',authRouter)
-// app.use('/',profileRouter)
-// app.use('/',requestRouter)
-// app.use('/',userRouter)
-// app.use('/',chatRouter)
+
+app.use('/',authRouter)
+app.use('/',profileRouter)
+app.use('/',requestRouter)
+app.use('/',userRouter)
+app.use('/',chatRouter)
 
   
 
