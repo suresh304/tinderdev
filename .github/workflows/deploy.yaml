@@ -22,3 +22,9 @@ jobs:
           script: |
             chmod +x /home/azureuser/deploy-backend.sh
             /home/azureuser/deploy-backend.sh
+      - name: Send Telegram notification
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
+            -d chat_id=${{ secrets.CHAT_ID }} \
+            -d text="✅ Heyy SURESH Backend deployment(TinderDEV) to Azure VM completed successfully from *main* branch!" \
+            -d parse_mode=Markdown
