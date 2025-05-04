@@ -31,7 +31,9 @@ app.use(cors({
 //   res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
 // });
 
-
+app.get('/test',()=>{
+    res.send('<h1>Hello, this is a small HTML response from Express!</h1>');
+})
 app.use('/',authRouter)
 app.use('/',profileRouter)
 app.use('/',requestRouter)
