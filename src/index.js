@@ -11,6 +11,7 @@ const { profileRouter } = require('./Routers/Profile')
 const { requestRouter } = require('./Routers/Requests')
 const { userRouter } = require('./Routers/User')
 const {chatRouter} = require('./Routers/chat')
+const path = require('path');
 
 const cors = require('cors')
 const { initialiseSocketConnection } = require('./utils/socket')
@@ -22,11 +23,24 @@ app.use(cors({
     credentials:true
 }))
 
+// Serve static files from React app
+// app.use(express.static(path.join(__dirname, '../client/build')));
+
+// For any unknown routes, serve React index.html
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+// });
+
+app.get('/test',()=>{
+    res.send('<h1>Hello, this is a small HTML response from Express!</h1>');
+})
 app.use('/',authRouter)
 app.use('/',profileRouter)
 app.use('/',requestRouter)
 app.use('/',userRouter)
 app.use('/',chatRouter)
+
+  
 
 
 
@@ -44,7 +58,7 @@ initialiseSocketConnection(server)
 connectDB()
     .then(() => {
         console.log("DB connected successfully");
-        server.listen(PORT, () => {
+        server.listen(PORT,'0.0.0.0', () => {
             console.log("server is listening at ", PORT);
         });
     })

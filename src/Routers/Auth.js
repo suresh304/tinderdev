@@ -74,4 +74,43 @@ authRouter.post('/logout', async (req, res) => {
 })
 
 
+authRouter.get('/test', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Deployment Check</title>
+        <style>
+          body {
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 50px;
+          }
+          .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: inline-block;
+          }
+          .status {
+            color: green;
+            font-size: 18px;
+            font-weight: bold;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>🚀 Backend Deployment Successful</h1>
+          <p class="status">Status: OK</p>
+          <p>Build Time: ${new Date().toLocaleString()}</p>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
+
 module.exports = { authRouter }
