@@ -4,29 +4,31 @@ const { Chat } = require('../models/chat')
 
 const chatRouter = express.Router()
 
-chatRouter.get('/chat/:targetUserId',userAuth, async (req,res)=>{
+chatRouter.get('/chat/:targetUserId', userAuth, async (req, res) => {
+  const userId = req.user._id;
+  const { targetUserId } = req.params;
 
-    const userId = req.user._id
-    const {targetUserId} = req.params
-    let chat = await Chat.findOne({
-        participants: {
-            $all: [userId, targetUserId],
-           
-        },
-        deletedBy:{ $ne: userId }
-    }).populate("messages.senderId","firstName lastName photoUrl createdAt").populate("messages.recieverId","firstName lastName photoUrl createdAt")
+  let chat = await Chat.findOne({
+    participants: { $all: [userId, targetUserId] },
+    deletedBy: { $ne: userId }
+  })
+    .populate("messages.senderId", "firstName lastName photoUrl createdAt")
+    .populate("messages.recieverId", "firstName lastName photoUrl createdAt");
 
-    if(!chat){
-        chat =  new Chat({
-            participants:[userId,targetUserId],
-            messages:[]
-        })
-        await chat.save()
-    }
-    res.send(chat)
-    
+  if (!chat) {
+    chat = new Chat({
+      participants: [userId, targetUserId],
+      messages: []
+    });
+    await chat.save();
+  } else {
+    chat.messages = chat.messages.filter(
+      (msg) => !msg.deletedBy?.map(id => id.toString()).includes(userId.toString())
+    );
+  }
 
-})
+  res.send(chat);
+});
 
 chatRouter.delete('/chat/:targetUserId', userAuth, async (req, res) => {
     const userId = req.user._id;
@@ -70,6 +72,71 @@ chatRouter.delete('/chat/:targetUserId', userAuth, async (req, res) => {
             error: error.message,
         });
     }
+});
+
+
+
+chatRouter.post('/chat/:targetUserId/:msgId', userAuth, async (req, res) => {
+    console.log("this is deletion>>>>>>>>>>>>>>>>>>",req.body)
+  const userId = req.user._id;
+  const { targetUserId, msgId } = req.params;
+  const del_for_both = req.body.del_for_both
+
+  try {
+    const chat = await Chat.findOne({
+      participants: { $all: [userId, targetUserId] },
+    });
+
+    if (!chat) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat not found",
+      });
+    }
+
+    // Find the message by ID
+    const message = chat.messages.find((msg) => msg._id.toString() === msgId);
+
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        message: "Message not found",
+      });
+    }
+
+    // Check if already deleted
+    if (message.deletedBy?.includes(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is already deleted for this user",
+      });
+    }
+
+    // Mark message as deleted for this user
+    if (!message.deletedBy) message.deletedBy = [];
+    if(del_for_both){
+
+        message.deletedBy.push(userId,targetUserId);
+    }else{
+    message.deletedBy.push(userId);
+
+    }
+
+    await chat.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Message deleted successfully for this user only",
+    });
+
+  } catch (error) {
+    console.error("Error deleting chat:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
 });
 
 

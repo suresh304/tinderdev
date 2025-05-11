@@ -15,7 +15,8 @@ const message = new mongoose.Schema({
     },
     text: {
         type: String
-    }
+    },
+    deletedBy:[{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 },{timestamps:true})
 
 const chatSchema = new mongoose.Schema({

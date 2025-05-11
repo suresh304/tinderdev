@@ -58,14 +58,7 @@ const initialiseSocketConnection = (server) => {
                     })
                 }
 
-                // chat.messages.push({
-                //     senderId: userId,
-                //     recieverId: targetUser,
-                //     text: message
-
-                // })
-                //   const data=      await chat.save().populate("messages.senderId","firsrName lastName photoUrl").populate("messages.recieverId","firsrName lastName photoUrl")
-
+               
 
                 const data = await chat.save()
 
@@ -78,8 +71,6 @@ const initialiseSocketConnection = (server) => {
                         $all: [userId, targetUser]
                     }
                 }).populate("messages.senderId", "firstName lastName photoUrl").populate("messages.recieverId", "firstName lastName photoUrl")
-
-
 
 
                 io.to(room).emit('messagerecieved', chat2.messages.slice(-1)[0])
@@ -99,6 +90,11 @@ const initialiseSocketConnection = (server) => {
             const room = [userId, targetUser].sort().join('$')
             console.log("this is typing--------->", data)
             io.to(room).emit('typingStatusRecieved', { data, senderId: userId, recieverId: targetUser })
+        })
+        socket.on("deletingMessage", ({ data, userId, targetUser }) => {
+            const room = [userId, targetUser].sort().join('$')
+            console.log("this is deleting>>--------->", data)
+            io.to(room).emit('messageDeleted', { data, senderId: userId, recieverId: targetUser })
         })
 
     })
