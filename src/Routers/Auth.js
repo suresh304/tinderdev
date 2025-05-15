@@ -18,7 +18,6 @@ authRouter.post('/login', async (req, res) => {
         }
 
         const isValid = await existinguser.isPasswordValid(password, existinguser.password)
-        console.log("is valisdd", isValid)
         if (!isValid) {
             res.status(400).send('invalid credentials')
         } else {
@@ -43,7 +42,6 @@ authRouter.post('/signup', async (req, res) => {
     const user = new User({ ...req.body, password: hash })
 
     try {
-        console.log("user >>>>>>>>", user, hash)
         validateSignup(req)
        const savedUser= await user.save()
        const token = savedUser.getJWT()

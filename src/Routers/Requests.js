@@ -24,7 +24,6 @@ requestRouter.post('/request/send/:status/:toUserId', userAuth, async (req, res)
         const existingConnection = await ConnectionRequest.findOne(
             { $or: [{ toUserId, fromUserId }, { toUserId: fromUserId, fromUserId: toUserId }] }
         )
-        console.log("this is exis", existingConnection)
         if (existingConnection) {
             // throw new Error("Connection already exist");
             // return
@@ -62,12 +61,7 @@ requestRouter.post('/request/review/:status/:conReqId', userAuth, async (req, re
 
         })
 
-        console.log("this is found conreq",{
-            _id: conReqId,
-            toUserId: logedinuser._id,
-            status: 'interested'
-
-        })
+        
 
         if (!connectionRequest) {
             return res.json({ message: "no connection request found.." })

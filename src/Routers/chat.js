@@ -77,7 +77,6 @@ chatRouter.delete('/chat/:targetUserId', userAuth, async (req, res) => {
 
 
 chatRouter.post('/chat/:targetUserId/:msgId', userAuth, async (req, res) => {
-    console.log("this is deletion>>>>>>>>>>>>>>>>>>",req.body)
   const userId = req.user._id;
   const { targetUserId, msgId } = req.params;
   const del_for_both = req.body.del_for_both

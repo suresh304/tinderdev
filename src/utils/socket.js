@@ -73,6 +73,9 @@ const initialiseSocketConnection = (server) => {
         }).populate("messages.senderId", "firstName lastName photoUrl _id").populate("messages.recieverId", "firstName lastName photoUrl _id")
 
 
+console.log(chat2.messages.slice(-1)[0])
+
+
         io.to(room).emit('messagerecieved', chat2.messages.slice(-1)[0])
       } catch (error) {
 
@@ -95,6 +98,8 @@ const initialiseSocketConnection = (server) => {
 
     socket.on("deletingMessage", async ({ msgId, userId, targetUser }) => {
       try {
+
+        console.log("this is deleting msg",msgId)
         const room = [userId, targetUser].sort().join('$');
 
         const chat = await Chat.findOne({

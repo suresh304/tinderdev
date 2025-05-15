@@ -35,7 +35,6 @@ const validateUpdatePassword =  async (req)=>{
             throw new Error("invalid password type...");
         }
 
-        console.log("this is >>>>>>>>>>>>>>>>>>",await user.isPasswordValid(currentPassword,user.password))
         
         return await user.isPasswordValid(currentPassword,user.password)
 
