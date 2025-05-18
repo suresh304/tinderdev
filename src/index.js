@@ -11,6 +11,8 @@ const { profileRouter } = require('./Routers/Profile')
 const { requestRouter } = require('./Routers/Requests')
 const { userRouter } = require('./Routers/User')
 const {chatRouter} = require('./Routers/chat')
+const uploadRouter = require('./Routers/upload')
+
 const path = require('path');
 
 const cors = require('cors')
@@ -40,6 +42,8 @@ app.use('/',requestRouter)
 app.use('/',userRouter)
 app.use('/',chatRouter)
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/upload', uploadRouter);
   
 
 
