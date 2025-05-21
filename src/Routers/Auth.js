@@ -7,23 +7,28 @@ const { validateSignup } = require('../utils/validate')
 authRouter.post('/login', async (req, res) => {
 
     // creating a new instance of user
+    console.log('login>>>>>>>>>>>>>>>>>>')
 
 
     try {
         const { emailId, password } = req.body
-        const existinguser = await User.findOne({ emailId: emailId })
-        if (!existinguser) {
+        // const existinguser = await User.findOne({ emailId: emailId })
+
+        const existingUser = await User.findOne({ emailId: new RegExp(`^${emailId}$`, 'i') });
+        console.log(existingUser)
+
+        if (!existingUser) {
             throw new Error(" invalid credentials");
 
         }
 
-        const isValid = await existinguser.isPasswordValid(password, existinguser.password)
+        const isValid = await existingUser.isPasswordValid(password, existingUser.password)
         if (!isValid) {
             res.status(400).send('invalid credentials')
         } else {
-            const token = await existinguser.getJWT()
+            const token = await existingUser.getJWT()
             res.cookie('token', token)
-            res.status(200).send(existinguser)
+            res.status(200).send(existingUser)
         }
 
 
