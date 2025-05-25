@@ -104,7 +104,7 @@ userRouter.get('/news',userAuth, async (req,res)=>{
         from: '2025-05-23',
         to: '2025-05-23',
         sortBy: 'popularity',
-        apiKey: process.env.NEWS_API_KEY,
+        apiKey: secrets.NEWS_API_KEY,
       },
     });
 
