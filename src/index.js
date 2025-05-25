@@ -49,7 +49,7 @@ initialiseSocketConnection(server);
 
 connectDB()
     .then(() => {
-        console.log("DB connected successfully");
+        console.log("DB connected successfully",process.env.NEWS_API_KEY);
         server.listen(PORT, '0.0.0.0', () => {
             console.log("Server is listening on port", PORT);
         });
