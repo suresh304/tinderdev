@@ -95,7 +95,7 @@ userRouter.get('/feed',userAuth, async (req,res)=>{
 })
 
 
-userRouter.get('/news',userAuth, async (req,res)=>{
+userRouter.get('/news', async (req,res)=>{
     const { q } = req.query;
     try {
     const response = await axios.get('https://newsapi.org/v2/everything', {
@@ -104,7 +104,7 @@ userRouter.get('/news',userAuth, async (req,res)=>{
         from: '2025-05-23',
         to: '2025-05-23',
         sortBy: 'popularity',
-        apiKey: process.env.NEWS_API_KEY,
+        apiKey: process.env.NEWS_API_KEY
       },
     });
 
