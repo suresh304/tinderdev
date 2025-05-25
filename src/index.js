@@ -23,7 +23,7 @@ const PORT = 3001;
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: '*',
+    origin: 'http://57.159.24.4',
     credentials: true
 }));
 
