@@ -3,6 +3,7 @@ const { userAuth } = require('../middlewares/auth')
 const connectionRequest = require('../models/connectionRequest')
 const userRouter = express.Router()
 const user = require('../models/user')
+const { default: axios } = require('axios')
 
 const USER_SAFE_DATA = "firstName lastName age photoUrl gender"
 
@@ -91,6 +92,27 @@ userRouter.get('/feed',userAuth, async (req,res)=>{
     } catch (error) {
         res.send(error)
     }
+})
+
+
+userRouter.get('/news',userAuth, async (req,res)=>{
+    const { q } = req.query;
+    try {
+    const response = await axios.get('https://newsapi.org/v2/everything', {
+      params: {
+        q,
+        from: '2025-05-23',
+        to: '2025-05-23',
+        sortBy: 'popularity',
+        apiKey: process.env.NEWS_API_KEY,
+      },
+    });
+
+    
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch news' });
+  }
 })
 
 module.exports = { userRouter }
