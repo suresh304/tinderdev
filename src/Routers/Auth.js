@@ -6,35 +6,41 @@ const { validateSignup } = require('../utils/validate')
 
 authRouter.post('/login', async (req, res) => {
 
-    // creating a new instance of user
-    console.log('login>>>>>>>>>>>>>>>>>>')
+  // creating a new instance of user
+  console.log('login>>>>>>>>>>>>>>>>>>')
 
 
-    try {
-        const { emailId, password } = req.body
-        // const existinguser = await User.findOne({ emailId: emailId })
+  try {
+    const { emailId, password } = req.body
+    // const existinguser = await User.findOne({ emailId: emailId })
 
-        const existingUser = await User.findOne({ emailId: new RegExp(`^${emailId}$`, 'i') });
+    const existingUser = await User.findOne({ emailId: new RegExp(`^${emailId}$`, 'i') });
         console.log(existingUser)
 
-        if (!existingUser) {
-            throw new Error(" invalid credentials");
+    if (!existingUser) {
+      throw new Error(" invalid credentials");
 
-        }
-
-        const isValid = await existingUser.isPasswordValid(password, existingUser.password)
-        if (!isValid) {
-            res.status(400).send('invalid credentials')
-        } else {
-            const token = await existingUser.getJWT()
-            res.cookie('token', token)
-            res.status(200).send(existingUser)
-        }
-
-
-    } catch (error) {
-        res.status(401).send("something went wrong" + error)
     }
+
+    const isValid = await existingUser.isPasswordValid(password, existingUser.password)
+    if (!isValid) {
+      res.status(400).send('invalid credentials')
+    } else {
+      const token = await existingUser.getJWT()
+
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,            // ✅ required by HTTPS (Ngrok)
+        sameSite: 'none'         // ✅ required for cross-origin
+      });
+      // res.cookie('token', token)
+      res.status(200).send(existingUser)
+    }
+
+
+  } catch (error) {
+    res.status(401).send("something went wrong" + error)
+  }
 
 
 })
@@ -42,19 +48,19 @@ authRouter.post('/login', async (req, res) => {
 
 authRouter.post('/signup', async (req, res) => {
 
-    // creating a new instance of user
-    const hash = await bcrypt.hash(req.body.password, 10)
-    const user = new User({ ...req.body, password: hash })
+  // creating a new instance of user
+  const hash = await bcrypt.hash(req.body.password, 10)
+  const user = new User({ ...req.body, password: hash })
 
-    try {
-        validateSignup(req)
-       const savedUser= await user.save()
-       const token = savedUser.getJWT()
-       res.cookie('token',token)
-        res.status(200).json({user:savedUser})
-    } catch (error) {
-        res.status(400).send('error saving the user')
-    }
+  try {
+    validateSignup(req)
+    const savedUser = await user.save()
+    const token = savedUser.getJWT()
+    res.cookie('token', token)
+    res.status(200).json({ user: savedUser })
+  } catch (error) {
+    res.status(400).send('error saving the user')
+  }
 
 
 })
@@ -64,14 +70,14 @@ authRouter.post('/logout', async (req, res) => {
 
 
 
-    try {
-        res.cookie('token', null, {
-            expires: new Date(Date.now())
-        })
-        res.send("user logout successfully")
-    } catch (error) {
-        res.status(400).send('something went wrong in logging out')
-    }
+  try {
+    res.cookie('token', null, {
+      expires: new Date(Date.now())
+    })
+    res.send("user logout successfully")
+  } catch (error) {
+    res.status(400).send('something went wrong in logging out')
+  }
 
 
 })
