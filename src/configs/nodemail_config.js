@@ -1,11 +1,10 @@
-// nodemail_config.js
-import nodemailer from 'nodemailer';
 
-// const nodemailer = require('nodemailer')
+
+const nodemailer = require('nodemailer')
 
 
 // Create a test account or replace with real credentials.
-export const transporter = nodemailer.createTransport({
+ const transporter = nodemailer.createTransport({
   host: process.env.BREVE_HOST,
   port: 587,
   secure: false,
@@ -14,3 +13,5 @@ export const transporter = nodemailer.createTransport({
     pass: process.env.BREVE_KEY,
   },
 });
+
+module.exports = {transporter}

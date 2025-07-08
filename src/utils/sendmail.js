@@ -1,7 +1,8 @@
-import  {transporter}  from "../configs/nodemail_config.js";
+
+const {transporter} = require('../configs/nodemail_config.js')
 
 
-export const sendMail = async(info)=>{
+ const sendMail = async(info)=>{
     const {from,to,subject,text,html} = info
    
 const res = await transporter.sendMail(
@@ -13,9 +14,8 @@ const res = await transporter.sendMail(
     html: html, // HTML body
   }
 )
-
 console.log('this is mail res',res);
 
-
-
 }
+
+module.exports = {sendMail}
