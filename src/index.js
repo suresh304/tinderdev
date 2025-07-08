@@ -23,9 +23,8 @@ const PORT = 3001;
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: 'http://57.159.24.4',
-    // origin:"http://localhost:5173",
-    credentials: true
+  origin: ['http://57.159.24.4', 'http://localhost:5173'],
+  credentials: true
 }));
 
 // ✅ Serve static files from 'uploads' folder
