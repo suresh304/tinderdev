@@ -19,13 +19,40 @@ const uploadRouter = require('./Routers/upload');
 const app = express();
 const PORT = 3001;
 
+
+
+const allowedOrigins = [
+  'http://57.159.24.4',
+  'http://localhost:5173',
+//   'https://beb1-115-98-236-35.ngrok-free.app'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin || allowedOrigins.includes(origin)||true) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 // Middlewares
+app.options('*', cors());
 app.use(express.json());
 app.use(cookieParser());
+<<<<<<< HEAD
 app.use(cors({
   origin: ['http://57.159.24.4', 'http://localhost:5173'],
   credentials: true
 }));
+=======
+
+
+
+>>>>>>> 97de40302c0e43b288f4296e534682741d79750d
 
 // ✅ Serve static files from 'uploads' folder
 app.get('/uploads', express.static(path.join(__dirname, 'uploads')));

@@ -2,6 +2,7 @@ const express = require('express')
 const requestRouter = express.Router()
 const { userAuth } = require('../middlewares/auth')
 const ConnectionRequest = require('../models/connectionRequest')
+const { sendMail } = require('../utils/sendmail')
 
 
 
@@ -33,6 +34,10 @@ requestRouter.post('/request/send/:status/:toUserId', userAuth, async (req, res)
 
 
         await connection.save()
+
+        await sendMail({from:"allisureshchinna@gmail.com",to:"sureshallie@gmail.com",subject:"testmail",text:"this is for testing",htnl:"<h1>Hello suresh</h1>"
+
+        })
         res.json({ message: "connection request sent" })
 
     } catch (error) {
