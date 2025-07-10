@@ -15,7 +15,7 @@ authRouter.post('/login', async (req, res) => {
     // const existinguser = await User.findOne({ emailId: emailId })
 
     const existingUser = await User.findOne({ emailId: new RegExp(`^${emailId}$`, 'i') });
-        console.log(existingUser)
+    console.log(existingUser)
 
     if (!existingUser) {
       throw new Error(" invalid credentials");
@@ -30,9 +30,10 @@ authRouter.post('/login', async (req, res) => {
 
       res.cookie("token", token, {
         httpOnly: true,
-        secure: true,            // ✅ required by HTTPS (Ngrok)
-        sameSite: 'none'         // ✅ required for cross-origin
+        secure: false,         // allow non-HTTPS
+        sameSite: 'lax'        // allows top-level navigation
       });
+
       // res.cookie('token', token)
       res.status(200).send(existingUser)
     }
