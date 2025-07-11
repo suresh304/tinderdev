@@ -55,7 +55,7 @@ app.use(cors({
 
 
 // ✅ Serve static files from 'uploads' folder
-app.get('/uploads', express.static(path.join(__dirname, 'uploads')));
+// app.get('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/', authRouter);
@@ -63,7 +63,7 @@ app.use('/', profileRouter);
 app.use('/', requestRouter);
 app.use('/', userRouter);
 app.use('/', chatRouter);
-app.use('/upload', uploadRouter);
+app.use('/', uploadRouter);
 
 // Sample Test Route
 app.get('/test', (req, res) => {

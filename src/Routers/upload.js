@@ -1,49 +1,53 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { uploadFileToAzure } = require('../utils/azureUploader');
+const { S3Client } = require('@aws-sdk/client-s3');
+const { Upload } = require('@aws-sdk/lib-storage');
+const dotenv = require('dotenv');
 const { userAuth } = require('../middlewares/auth');
 
+dotenv.config();
 const uploadRouter = express.Router();
 
-// Temp upload dir
-const tempDir = path.join(__dirname, '..', 'temp');
-if (!fs.existsSync(tempDir)) {
-  fs.mkdirSync(tempDir);
-}
-
-// Multer setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, tempDir),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+// AWS SDK v3 S3 client
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+  }
 });
 
-const upload = multer({
-  storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/zip' || file.originalname.endsWith('.zip')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only ZIP files are allowed'), false);
-    }
-  },
-});
+// Multer config to keep file in memory (not disk)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-// POST /api/upload
-uploadRouter.post('/', userAuth, upload.single('file'), async (req, res) => {
+// Route: POST /upload
+uploadRouter.post('/upload', userAuth, upload.single('file'), async (req, res) => {
+  console.log("helllllo");
+  
   try {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    if (!req.file) return res.status(400).send('No file uploaded');
 
-    const localFilePath = req.file.path;
-    const blobName = req.file.filename;
+    const fileName = Date.now() + '-' + req.file.originalname;
 
-    const azureFileUrl = await uploadFileToAzure(localFilePath, blobName);
+    const upload = new Upload({
+      client: s3,
+      params: {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: fileName,
+        Body: req.file.buffer,
+       
+        ContentType: req.file.mimetype
+      }
+    });
 
-    // Delete local temp file
-    fs.unlinkSync(localFilePath);
+    const result = await upload.done();
 
-    res.json({ message: "Upload successful", fileUrl: azureFileUrl });
+    res.status(200).json({
+      message: 'File uploaded successfully!',
+      fileUrl: result.Location
+    });
+
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Upload failed' });
