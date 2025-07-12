@@ -1,4 +1,4 @@
-name: Deploy Backend to Azure VM
+name: Deploy Backend to AWS EC2
 
 on:
   push:
@@ -13,18 +13,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Deploy via SSH to AWS EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
-          host: ${{ secrets.AZURE_HOST }}
-          username: ${{ secrets.AZURE_USER }}
-          key: ${{ secrets.AZURE_SSH_KEY }}
+          host: ${{ secrets.AWS_HOST }}               # Public IP or DNS of AWS
+          username: ${{ secrets.AWS_USER }}           # Usually "AWS-user" for Amazon Linux or "ubuntu" for Ubuntu
+          key: ${{ secrets.AWS_SSH_KEY }}             # Private key (.pem) stored as GitHub Secret
           script: |
-            chmod +x /home/azureuser/deploy-backend.sh
-            /home/azureuser/deploy-backend.sh
+            chmod +x ~/deploy-backend.sh
+            ~/deploy-backend.sh
+
       - name: Send Telegram notification
         run: |
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.CHAT_ID }} \
-            -d text="✅ Heyy SURESH Backend deployment(TinderDEV) to Azure VM completed successfully from *main* branch!" \
+            -d text="✅ Heyy SURESH! Backend deployment (TinderDEV) to AWS EC2 completed successfully from *main* branch!" \
             -d parse_mode=Markdown
