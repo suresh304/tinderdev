@@ -3,6 +3,7 @@ const requestRouter = express.Router()
 const { userAuth } = require('../middlewares/auth')
 const ConnectionRequest = require('../models/connectionRequest')
 const { sendMail } = require('../utils/sendmail')
+const user = require('../models/user')
 
 
 
@@ -13,6 +14,10 @@ requestRouter.post('/request/send/:status/:toUserId', userAuth, async (req, res)
         const toUserId = req.params.toUserId
         const status = req.params.status
         const fromUserId = req.user._id
+        const logged_in_user = req.user.emailId
+
+        const data = await user.findById(toUserId)
+        const sendTo = data.emailId
 
         if (!allowedStatus.includes(status)) {
             return res.json({ "message": "invalid status type" })
@@ -35,7 +40,7 @@ requestRouter.post('/request/send/:status/:toUserId', userAuth, async (req, res)
 
         await connection.save()
 
-        await sendMail({from:"allisureshchinna@gmail.com",to:"sureshallie@gmail.com",subject:"testmail",text:"this is for testing",htnl:"<h1>Hello suresh</h1>"
+        await sendMail({from:logged_in_user,to:sendTo,subject:"Friend Request",text:`${req.user.firstName} wants to be friend with you 👋`,html:"<h1>Open app and respond</h1>"
 
         })
         res.json({ message: "connection request sent" })

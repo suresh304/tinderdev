@@ -37,7 +37,7 @@ profileRouter.patch('/profile/edit', userAuth, async (req, res) => {
         const updateData = req.body
 
         const data = await User.findByIdAndUpdate(user._id,updateData,{new:true})
-        await sendMail({from:"allisureshchinna@gmail.com",to:"sureshallie@gmail.com",subject:"testmail",text:"this is for testing",htnl:"<h1>Hello suresh</h1>"})
+        // await sendMail({from:"allisureshchinna@gmail.com",to:"sureshallie@gmail.com",subject:"testmail",text:"this is for testing",htnl:"<h1>Hello suresh</h1>"})
         
         // res.status(200).json({...data,updateData})
         res.status(200).json(data)
