@@ -1,76 +1,56 @@
-const express = require('express')
-const profileRouter = express.Router()
-const {userAuth} = require('../middlewares/auth')
-const User = require('../models/user')
+const express = require('express');
+const profileRouter = express.Router();
+const { userAuth } = require('../middlewares/auth');
 const bcrypt = require('bcrypt');
-
-
-const { validateSignup, validateProfileEdit, validateUpdatePassword } = require('../utils/validate');
+const { Pool } = require('pg');
+const { validateProfileEdit } = require('../utils/validate');
 const { sendMail } = require('../utils/sendmail');
 
+// PostgreSQL pool setup (you can also import from a config file)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // or define individual config keys
+});
 
+// GET profile
 profileRouter.get('/profile/view', userAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
 
+    const { rows } = await pool.query('SELECT id, first_name, email_id, about FROM users WHERE id = $1', [userId]);
 
-    try {
-       const user = req.user
-       if(!user){
-        res.send('no user found')
-       }
-       res.send(user)
-
-    } catch (error) {
-        res.status(400).send('something went wrong gettign profile')
+    if (rows.length === 0) {
+      return res.status(404).send('No user found');
     }
 
+    res.status(200).json(rows[0]);
+  } catch (error) {
+    res.status(400).send('Something went wrong fetching profile');
+  }
+});
 
-})
-
+// PATCH profile
 profileRouter.patch('/profile/edit', userAuth, async (req, res) => {
-
-
-    try {
-        if(!validateProfileEdit(req)){
-            throw new Error("Invalid edit request");
-        }
-        const user = req.user
-        const updateData = req.body
-
-        const data = await User.findByIdAndUpdate(user._id,updateData,{new:true})
-        // await sendMail({from:"allisureshchinna@gmail.com",to:"sureshallie@gmail.com",subject:"testmail",text:"this is for testing",htnl:"<h1>Hello suresh</h1>"})
-        
-        // res.status(200).json({...data,updateData})
-        res.status(200).json(data)
-      
-
-    } catch (error) {
-        
-res.status(400).send("error:"+error)
-
+  try {
+    if (!validateProfileEdit(req)) {
+      throw new Error('Invalid edit request');
     }
 
+    const userId = req.user.id;
+    const { name, about,age, } = req.body;
 
-})
+    const { rows } = await pool.query(
+      'UPDATE users SET name = $1, bio = $2, updated_at = NOW() WHERE id = $3 RETURNING id, name, email, bio',
+      [name, about, age]
+    );
 
-profileRouter.patch('/profile/updatePassword',userAuth,async (req,res)=>{
-    try {
-        console.log("update password called route",req.body.newPassword)
-        const result = await validateUpdatePassword(req)
-        if(result){
-            const hash = await bcrypt.hash(req.body.newPassword, 10)
-            await User.findByIdAndUpdate(req.user._id,{password:hash})
-
-            res.send({"message":"password updateion"})
-        }else{
-            throw new Error("mismatch existing password");
-            
-        }
-         
-    } catch (error) {
-        res.send("the error is"+error)
+    if (rows.length === 0) {
+      return res.status(404).send('User not found');
     }
 
-})
+    res.status(200).json(rows[0]);
+  } catch (error) {
+    res.status(400).send('Error: ' + error.message);
+  }
+});
 
-
-module.exports = {profileRouter}
+module.exports = { profileRouter };

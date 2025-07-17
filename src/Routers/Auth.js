@@ -2,86 +2,124 @@ const express = require('express')
 const authRouter = express.Router()
 const User = require('../models/user')
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken');
 const { validateSignup } = require('../utils/validate')
 
+function generateJWT(user) {
+  return jwt.sign(
+    { id: user.id, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+}
+
 authRouter.post('/login', async (req, res) => {
+  console.log('login>>>>>>>>>>>>>>>>>>');
 
-  // creating a new instance of user
-  console.log('login>>>>>>>>>>>>>>>>>>')
-
+  const db = req.app.locals.db;
+  const { emailId, password } = req.body;
 
   try {
-    const { emailId, password } = req.body
-    // const existinguser = await User.findOne({ emailId: emailId })
+    // Case-insensitive email lookup
+    const result = await db.query(
+      `SELECT * FROM users WHERE LOWER(email_id) = LOWER($1)`,
+      [emailId]
+    );
 
-    const existingUser = await User.findOne({ emailId: new RegExp(`^${emailId}$`, 'i') });
-    console.log(existingUser)
+    const existingUser = result.rows[0];
 
     if (!existingUser) {
-      throw new Error(" invalid credentials");
-
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const isValid = await existingUser.isPasswordValid(password, existingUser.password)
+    const isValid = await bcrypt.compare(password, existingUser.password);
     if (!isValid) {
-      res.status(400).send('invalid credentials')
-    } else {
-      const token = await existingUser.getJWT()
-
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: false,         // allow non-HTTPS
-        sameSite: 'lax'        // allows top-level navigation
-      });
-
-      // res.cookie('token', token)
-      res.status(200).send(existingUser)
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    const token = generateJWT(existingUser);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,         // Set to true in production (HTTPS)
+      sameSite: 'lax'
+    });
+
+    // Exclude password before sending back user
+    const { password: _, ...userWithoutPassword } = existingUser;
+
+    res.status(200).json(userWithoutPassword);
 
   } catch (error) {
-    res.status(401).send("something went wrong" + error)
+    console.error(error);
+    res.status(500).send("Something went wrong");
   }
-
-
-})
+});
 
 
 authRouter.post('/signup', async (req, res) => {
-
-  // creating a new instance of user
-  const hash = await bcrypt.hash(req.body.password, 10)
-  const user = new User({ ...req.body, password: hash })
+  const db = req.app.locals.db;
+  console.log(req.body)
+  const { firstName, lastName, emailId, password, age, gender, about, photoUrl } = req.body;
 
   try {
-    validateSignup(req)
-    const savedUser = await user.save()
-    const token = savedUser.getJWT()
-    res.cookie('token', token)
-    res.status(200).json({ user: savedUser })
+    // ✅ Validate input (optional, if you have logic)
+    validateSignup(req);
+
+    // ✅ Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ✅ Check if email already exists
+    const existingUser = await db.query('SELECT * FROM users WHERE email_id = $1', [emailId]);
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ message: 'Email already exists' });
+    }
+
+    // ✅ Insert user
+    const result = await db.query(`
+      INSERT INTO users (first_name, last_name, email_id, password, age, gender, about, photo_url)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id, first_name, last_name, email_id, age, gender, about, photo_url
+    `, [
+      firstName,
+      lastName,
+      emailId,
+      hashedPassword,
+      age,
+      gender,
+      about || '',
+      photoUrl || ''
+    ]);
+
+    const savedUser = result.rows[0];
+
+    // ✅ Generate JWT token
+    const token = generateJWT(savedUser);
+    res.cookie('token', token, { httpOnly: true });
+
+    res.status(200).json({ user: savedUser });
   } catch (error) {
-    res.status(400).send('error saving the user')
+    console.error(error);
+    res.status(400).json({ message: 'Error saving the user' });
   }
+});
 
-
-})
 
 
 authRouter.post('/logout', async (req, res) => {
-
-
-
   try {
-    res.cookie('token', null, {
-      expires: new Date(Date.now())
-    })
-    res.send("user logout successfully")
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: false,        // Set to true in production (HTTPS)
+      sameSite: 'lax'
+    });
+
+    res.status(200).send("User logged out successfully");
   } catch (error) {
-    res.status(400).send('something went wrong in logging out')
+    res.status(400).send('Something went wrong during logout');
   }
+});
 
-
-})
 
 
 authRouter.get('/test', (req, res) => {
