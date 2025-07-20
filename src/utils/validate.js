@@ -1,13 +1,13 @@
  const jwt = require('jsonwebtoken')
 
  const validateSignup = (req) =>{
-const {firstName,lastName,emailId,password} = req.body
-// console.log("this is ",{firstName,lastname,emailId,password})
-if(!firstName||!lastName){
+const {first_name,last_name,email_id,password} = req.body
+// console.log("this is ",{first_name,last_name,email_id,password})
+if(!first_name||!last_name){
 
     throw new Error("name is invalid");
     
-}else if(!emailId||!password){
+}else if(!email_id||!password){
     throw new Error(" email or password is missing");
     
 }
@@ -17,7 +17,7 @@ return true
 
 const validateProfileEdit = (req)=>{
 
-    const allowedFields = ["firstName","lastName","age","photoUrl","about"]
+    const allowedFields = ["first_name","last_name","age","photo_url","about"]
 
     const iseditAllowed = Object.keys(req.body).every((field)=>allowedFields.includes(field))
 

@@ -22,7 +22,7 @@ const app = express();
 const PORT = 3001;
 
 // ✅ PostgreSQL Pool Connection
-const pool = new Pool({
+ const   pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: false, // or { rejectUnauthorized: false } if using SSL (like on Railway or Heroku)
 });
@@ -74,3 +74,4 @@ pool.connect()
   .catch(err => {
     console.error('❌ PostgreSQL connection failed:', err.message);
   });
+module.exports ={pool}

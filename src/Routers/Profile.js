@@ -14,15 +14,17 @@ const pool = new Pool({
 // GET profile
 profileRouter.get('/profile/view', userAuth, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const user = req.user;
 
-    const { rows } = await pool.query('SELECT id, first_name, email_id, about FROM users WHERE id = $1', [userId]);
-
-    if (rows.length === 0) {
-      return res.status(404).send('No user found');
+    if(user){
+      res.status(200).json(user)
+    }else{
+      res.status(401).json(
+        {message:"no user exist"}
+      )
     }
 
-    res.status(200).json(rows[0]);
+   ;
   } catch (error) {
     res.status(400).send('Something went wrong fetching profile');
   }

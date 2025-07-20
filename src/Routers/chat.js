@@ -6,29 +6,69 @@ const user = require('../models/user');
 const chatRouter = express.Router()
 
 chatRouter.get('/chat/:targetUserId', userAuth, async (req, res) => {
-  const userId = req.user._id;
-  const { targetUserId } = req.params;
+  const userId = req.user.id;
+  const targetUserId = parseInt(req.params.targetUserId);
+  const db = req.app.locals.db
 
-  let chat = await Chat.findOne({
-    participants: { $all: [userId, targetUserId] },
-    deletedBy: { $ne: userId }
-  })
-    .populate("messages.senderId", "firstName lastName photoUrl createdAt")
-    .populate("messages.recieverId", "firstName lastName photoUrl createdAt");
+  try {
+    // 1. Find existing chat room between both users
+    const chatRoomResult = await db.query(`
+      SELECT cr.id
+      FROM chat_rooms cr
+      WHERE (
+        (cr.user1_id = $1 AND cr.user2_id = $2)
+        OR
+        (cr.user1_id = $2 AND cr.user2_id = $1)
+      )
+      LIMIT 1
+    `, [userId, targetUserId]);
 
-  if (!chat) {
-    chat = new Chat({
+    let chatRoomId;
+
+    // 2. If no chat room found, create one
+    if (chatRoomResult.rows.length === 0) {
+      const insertResult = await db.query(`
+        INSERT INTO chat_rooms (user1_id, user2_id)
+        VALUES ($1, $2)
+        RETURNING id
+      `, [userId, targetUserId]);
+
+      chatRoomId = insertResult.rows[0].id;
+    } else {
+      chatRoomId = chatRoomResult.rows[0].id;
+    }
+
+    // 3. Fetch chat messages between the two users in this room
+    const messagesResult = await db.query(`
+      SELECT
+        m.id,
+        m.text,
+        m.created_at,
+        m.sender_id,
+        m.receiver_id,
+        us.first_name AS sender_first_name,
+        us.last_name AS sender_last_name,
+        us.photo_url AS sender_photo_url,
+        ur.first_name AS receiver_first_name,
+        ur.last_name AS receiver_last_name,
+        ur.photo_url AS receiver_photo_url
+      FROM chat_messages m
+      JOIN users us ON us.id = m.sender_id
+      JOIN users ur ON ur.id = m.receiver_id
+      WHERE m.chat_room_id = $1
+      ORDER BY m.created_at ASC
+    `, [chatRoomId]);
+
+    res.send({
+      chat_room_id: chatRoomId,
       participants: [userId, targetUserId],
-      messages: []
+      messages: messagesResult.rows
     });
-    await chat.save();
-  } else {
-    chat.messages = chat.messages.filter(
-      (msg) => !msg.deletedBy?.map(id => id.toString()).includes(userId.toString())
-    );
-  }
 
-  res.send(chat);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 
@@ -37,8 +77,9 @@ chatRouter.get('/chat/:targetUserId', userAuth, async (req, res) => {
 
 
 
+
 // chatRouter.get('/chat/:targetUserId/messages', userAuth, async (req, res) => {
-//   const userId = req.user._id;
+//   const userId = req.user.id;
 //   const { targetUserId } = req.params;
 //   const limit = parseInt(req.query.limit) || 20;
 //   const skip = parseInt(req.query.skip) || 0;
@@ -73,11 +114,11 @@ chatRouter.get('/chat/:targetUserId', userAuth, async (req, res) => {
 //   });
 
 //   const users = await user.find({ _id: { $in: Array.from(userIds) } })
-//     .select("firstName lastName photoUrl createdAt");
+//     .select("first_name lastName photoUrl createdAt");
 
 //   const userMap = {};
 //   users.forEach(u => {
-//     userMap[u._id] = u;
+//     userMap[u.id] = u;
 //   });
 
 //   // Attach populated user data
@@ -105,7 +146,7 @@ chatRouter.get('/chat/:targetUserId', userAuth, async (req, res) => {
 
 
 chatRouter.delete('/chat/:targetUserId', userAuth, async (req, res) => {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const { targetUserId } = req.params;
 
     try {
@@ -151,59 +192,79 @@ chatRouter.delete('/chat/:targetUserId', userAuth, async (req, res) => {
 
 
 chatRouter.post('/chat/:targetUserId/:msgId', userAuth, async (req, res) => {
-  const userId = req.user._id;
+  const userId = req.user.id;
   const { targetUserId, msgId } = req.params;
-  const del_for_both = req.body.del_for_both
+  const delForBoth = req.body.del_for_both;
 
   try {
-    const chat = await Chat.findOne({
-      participants: { $all: [userId, targetUserId] },
-    });
+    // 1. Check if chat room exists between these users
+    const chatRoomResult = await db.query(
+      `SELECT id FROM chat_rooms 
+       WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1) 
+       LIMIT 1`,
+      [userId, targetUserId]
+    );
 
-    if (!chat) {
+    if (chatRoomResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Chat not found",
       });
     }
 
-    // Find the message by ID
-    const message = chat.messages.find((msg) => msg._id.toString() === msgId);
+    const chatRoomId = chatRoomResult.rows[0].id;
 
-    if (!message) {
+    // 2. Check if message exists and belongs to that chat
+    const messageResult = await db.query(
+      `SELECT * FROM chat_messages 
+       WHERE id = $1 AND chat_room_id = $2`,
+      [msgId, chatRoomId]
+    );
+
+    if (messageResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Message not found",
       });
     }
 
-    // Check if already deleted
-    if (message.deletedBy?.includes(userId)) {
+    // 3. Check if already deleted for this user
+    const checkDeletion = await db.query(
+      `SELECT 1 FROM message_deletions 
+       WHERE message_id = $1 AND user_id = $2`,
+      [msgId, userId]
+    );
+
+    if (checkDeletion.rows.length > 0) {
       return res.status(400).json({
         success: false,
         message: "Message is already deleted for this user",
       });
     }
 
-    // Mark message as deleted for this user
-    if (!message.deletedBy) message.deletedBy = [];
-    if(del_for_both){
+    // 4. Mark message as deleted for one or both users
+    const deleteForUsers = delForBoth
+      ? [userId, parseInt(targetUserId)]
+      : [userId];
 
-        message.deletedBy.push(userId,targetUserId);
-    }else{
-    message.deletedBy.push(userId);
-
+    for (const uid of deleteForUsers) {
+      await db.query(
+        `INSERT INTO message_deletions (message_id, user_id) 
+         VALUES ($1, $2)
+         ON CONFLICT (message_id, user_id) DO NOTHING`,
+        [msgId, uid]
+      );
     }
-
-    await chat.save();
 
     return res.status(200).json({
       success: true,
-      message: "Message deleted successfully for this user only",
+      message: delForBoth
+        ? "Message deleted for both users"
+        : "Message deleted for this user only",
     });
 
   } catch (error) {
-    console.error("Error deleting chat:", error);
+    console.error("Error deleting message:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -211,6 +272,7 @@ chatRouter.post('/chat/:targetUserId/:msgId', userAuth, async (req, res) => {
     });
   }
 });
+
 
 
 module.exports = {chatRouter}

@@ -17,13 +17,13 @@ authRouter.post('/login', async (req, res) => {
   console.log('login>>>>>>>>>>>>>>>>>>');
 
   const db = req.app.locals.db;
-  const { emailId, password } = req.body;
+  const { email_id, password } = req.body;
 
   try {
     // Case-insensitive email lookup
     const result = await db.query(
       `SELECT * FROM users WHERE LOWER(email_id) = LOWER($1)`,
-      [emailId]
+      [email_id]
     );
 
     const existingUser = result.rows[0];
@@ -60,7 +60,7 @@ authRouter.post('/login', async (req, res) => {
 authRouter.post('/signup', async (req, res) => {
   const db = req.app.locals.db;
   console.log(req.body)
-  const { firstName, lastName, emailId, password, age, gender, about, photoUrl } = req.body;
+  const { first_name, last_name, email_id, password, age, gender, about, photo_url } = req.body;
 
   try {
     // ✅ Validate input (optional, if you have logic)
@@ -70,7 +70,7 @@ authRouter.post('/signup', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // ✅ Check if email already exists
-    const existingUser = await db.query('SELECT * FROM users WHERE email_id = $1', [emailId]);
+    const existingUser = await db.query('SELECT * FROM users WHERE email_id = $1', [email_id]);
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ message: 'Email already exists' });
     }
@@ -81,14 +81,14 @@ authRouter.post('/signup', async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id, first_name, last_name, email_id, age, gender, about, photo_url
     `, [
-      firstName,
-      lastName,
-      emailId,
+      first_name,
+      last_name,
+      email_id,
       hashedPassword,
       age,
       gender,
       about || '',
-      photoUrl || ''
+      photo_url || ''
     ]);
 
     const savedUser = result.rows[0];
@@ -100,7 +100,7 @@ authRouter.post('/signup', async (req, res) => {
     res.status(200).json({ user: savedUser });
   } catch (error) {
     console.error(error);
-    res.status(400).json({ message: 'Error saving the user' });
+    res.status(400).json({ message: 'Error saving the user',error:error });
   }
 });
 
