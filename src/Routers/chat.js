@@ -1,7 +1,5 @@
 const express = require('express')
 const { userAuth } = require('../middlewares/auth')
-const { Chat } = require('../models/chat');
-const user = require('../models/user');
 
 const chatRouter = express.Router()
 
@@ -40,24 +38,26 @@ chatRouter.get('/chat/:targetUserId', userAuth, async (req, res) => {
 
     // 3. Fetch chat messages between the two users in this room
     const messagesResult = await db.query(`
-      SELECT
-        m.id,
-        m.text,
-        m.created_at,
-        m.sender_id,
-        m.receiver_id,
-        us.first_name AS sender_first_name,
-        us.last_name AS sender_last_name,
-        us.photo_url AS sender_photo_url,
-        ur.first_name AS receiver_first_name,
-        ur.last_name AS receiver_last_name,
-        ur.photo_url AS receiver_photo_url
-      FROM chat_messages m
-      JOIN users us ON us.id = m.sender_id
-      JOIN users ur ON ur.id = m.receiver_id
-      WHERE m.chat_room_id = $1
-      ORDER BY m.created_at ASC
-    `, [chatRoomId]);
+  SELECT
+    m.id,
+    m.text,
+    m.created_at,
+    m.sender_id,
+    m.receiver_id,
+    us.first_name AS sender_first_name,
+    us.last_name AS sender_last_name,
+    us.photo_url AS sender_photo_url,
+    ur.first_name AS receiver_first_name,
+    ur.last_name AS receiver_last_name,
+    ur.photo_url AS receiver_photo_url
+  FROM chat_messages m
+  JOIN users us ON us.id = m.sender_id
+  JOIN users ur ON ur.id = m.receiver_id
+  WHERE m.chat_room_id = $1 
+    AND NOT ($2 = ANY (m.deleted_by))
+  ORDER BY m.created_at ASC
+`, [chatRoomId, userId]);
+
 
     res.send({
       chat_room_id: chatRoomId,

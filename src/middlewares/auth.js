@@ -1,9 +1,12 @@
 const jwt = require("jsonwebtoken");
 
 const userAuth = async (req, res, next) => {
+
   try {
     const db = req.app.locals.db;
     const { token } = req.cookies;
+  console.log("now enterd",token)
+
 
     if (!token) {
       throw new Error("Token expired...");

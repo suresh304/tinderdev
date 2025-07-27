@@ -1,8 +1,6 @@
 const express = require('express')
 const { userAuth } = require('../middlewares/auth')
-const connectionRequest = require('../models/connectionRequest')
 const userRouter = express.Router()
-const user = require('../models/user')
 const { default: axios } = require('axios')
 
 const USER_SAFE_DATA = "first_name last_name age photo_url gender"

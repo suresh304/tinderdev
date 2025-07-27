@@ -1,6 +1,5 @@
 const express = require('express')
 const authRouter = express.Router()
-const User = require('../models/user')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken');
 const { validateSignup } = require('../utils/validate')
@@ -49,6 +48,7 @@ authRouter.post('/login', async (req, res) => {
     const { password: _, ...userWithoutPassword } = existingUser;
 
     res.status(200).json(userWithoutPassword);
+    
 
   } catch (error) {
     console.error(error);

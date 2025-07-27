@@ -17,6 +17,8 @@ const { requestRouter } = require('./Routers/Requests');
 const { userRouter } = require('./Routers/User');
 const { chatRouter } = require('./Routers/chat');
 const uploadRouter = require('./Routers/upload');
+const { PostRouter } = require('./Routers/Posts');
+const CommentRouter = require('./Routers/Comment');
 
 const app = express();
 const PORT = 3001;
@@ -56,7 +58,9 @@ app.use('/', profileRouter);
 app.use('/', requestRouter);
 app.use('/', userRouter);
 app.use('/', chatRouter);
+app.use('/',PostRouter);
 app.use('/', uploadRouter);
+app.use('/', CommentRouter);
 
 // Start server
 const server = http.createServer(app);
