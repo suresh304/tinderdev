@@ -151,7 +151,7 @@ authRouter.get('/test', (req, res) => {
       </head>
       <body>
         <div class="card">
-          <h1>🚀 Backend Deployment Successful😍!💕</h1>
+          <h1>🚀 Backend Deployment Successful👌!💕</h1>
           <p class="status">Status: OK</p>
           <p>Build Time: ${new Date().toLocaleString()}</p>
         </div>
