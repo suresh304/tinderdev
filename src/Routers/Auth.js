@@ -127,7 +127,7 @@ authRouter.get('/test', (req, res) => {
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Deployment Check</title>
+        <title>Deployment Test</title>
         <style>
           body {
             background-color: #f4f4f4;
