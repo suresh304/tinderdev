@@ -16,8 +16,8 @@ PostRouter.get('/posts', userAuth, async (req, res) => {
         users.first_name AS author, 
         posts.content, 
         posts.created_at AS published_on
-      FROM users 
-      INNER JOIN posts ON users.id = posts.user_id 
+      FROM public.users 
+      INNER JOIN public.posts ON users.id = posts.user_id 
       ORDER BY posts.created_at DESC;
     `);
 

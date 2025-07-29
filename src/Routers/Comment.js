@@ -16,7 +16,7 @@ CommentRouter.post('/comments', userAuth,async (req, res) => {
 
   try {
     const query = `
-      INSERT INTO comments (post_id, user_id, content, parent_comment_id)
+      INSERT INTO public.comments (post_id, user_id, content, parent_comment_id)
       VALUES ($1, $2, $3, $4)
       RETURNING *;
     `;
@@ -39,7 +39,7 @@ CommentRouter.get('/comments/:postId', async (req, res) => {
 
   try {
     const query = `
-      WITH RECURSIVE nested_comments AS (
+      WITH RECURSIVE public.nested_comments AS (
         -- Base case: top-level comments
         SELECT 
           c.id,
@@ -51,8 +51,8 @@ CommentRouter.get('/comments/:postId', async (req, res) => {
           c.parent_comment_id,
           c.created_at,
           0 AS depth
-        FROM comments c
-        JOIN users u ON u.id = c.user_id
+        FROM public.comments c
+        JOIN public.users u ON u.id = c.user_id
         WHERE c.post_id = $1 AND c.parent_comment_id IS NULL
 
         UNION ALL
@@ -68,12 +68,12 @@ CommentRouter.get('/comments/:postId', async (req, res) => {
           c.parent_comment_id,
           c.created_at,
           nc.depth + 1
-        FROM comments c
-        JOIN users u ON u.id = c.user_id
-        JOIN nested_comments nc ON nc.id = c.parent_comment_id
+        FROM public.comments c
+        JOIN public.users u ON u.id = c.user_id
+        JOIN public.nested_comments nc ON nc.id = c.parent_comment_id
         WHERE c.post_id = $1
       )
-      SELECT * FROM nested_comments
+      SELECT * FROM public.nested_comments
       ORDER BY created_at ASC;
     `;
 
@@ -98,7 +98,7 @@ CommentRouter.patch('/comments/:id', userAuth, async (req, res) => {
 
         // Optional: Check if the comment belongs to the user
         const check = await db.query(
-            'SELECT * FROM comments WHERE id = $1 AND user_id = $2',
+            'SELECT * FROM public.comments WHERE id = $1 AND user_id = $2',
             [commentId, userId]
         );
 
@@ -108,7 +108,7 @@ CommentRouter.patch('/comments/:id', userAuth, async (req, res) => {
 
         // Update the comment content
         const result = await db.query(
-            `UPDATE comments 
+            `UPDATE public.comments 
              SET content = $1, updated_at = CURRENT_TIMESTAMP 
              WHERE id = $2 
              RETURNING *`,

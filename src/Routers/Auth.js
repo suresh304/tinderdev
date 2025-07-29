@@ -21,7 +21,7 @@ authRouter.post('/login', async (req, res) => {
   try {
     // Case-insensitive email lookup
     const result = await db.query(
-      `SELECT * FROM users WHERE LOWER(email_id) = LOWER($1)`,
+      `SELECT * FROM public.users WHERE LOWER(email_id) = LOWER($1)`,
       [email_id]
     );
 
@@ -70,14 +70,14 @@ authRouter.post('/signup', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // ✅ Check if email already exists
-    const existingUser = await db.query('SELECT * FROM users WHERE email_id = $1', [email_id]);
+    const existingUser = await db.query('SELECT * FROM public.users WHERE email_id = $1', [email_id]);
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ message: 'Email already exists' });
     }
 
     // ✅ Insert user
     const result = await db.query(`
-      INSERT INTO users (first_name, last_name, email_id, password, age, gender, about, photo_url)
+      INSERT INTO public.users (first_name, last_name, email_id, password, age, gender, about, photo_url)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id, first_name, last_name, email_id, age, gender, about, photo_url
     `, [

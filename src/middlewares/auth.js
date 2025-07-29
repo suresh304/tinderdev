@@ -16,9 +16,9 @@ const userAuth = async (req, res, next) => {
     console.log(decodedObj);
 
     // Assume your JWT stores the user's id as `id` or `_id`
-    const userId = decodedObj.id || decodedObj._id;
+    const userId = decodedObj.id
 
-    const result = await db.query("SELECT * FROM users WHERE id = $1", [userId]);
+    const result = await db.query("SELECT * FROM public.users WHERE id = $1", [userId]);
     const user = result.rows[0];
 
     if (!user) {

@@ -18,7 +18,7 @@ requestRouter.post('/request/send/:status/:toUserId', userAuth, async (req, res)
         const logged_in_user = req.user.email_id
 
         // const data = await user.findById(toUserId)
-        const data = await db.query(`select * from users where id = ${to_user_id}`)
+        const data = await db.query(`select * from public.users where id = ${to_user_id}`)
         console.log("this is info of req reciever", data.rows[0]);
 
         const sendTo = data.email_id
@@ -38,7 +38,7 @@ requestRouter.post('/request/send/:status/:toUserId', userAuth, async (req, res)
 
             console.log("helloooo")
            let data = await db.query(
-  `SELECT * FROM connection_requests 
+  `SELECT * FROM public.connection_requests 
    WHERE (from_user_id = $1 AND to_user_id = $2) 
       OR (from_user_id = $2 AND to_user_id = $1)`,
   [from_user_id, to_user_id]
@@ -63,7 +63,7 @@ const connection = await is_connection_exist()
         const saveConnection = async () => {
 
             await db.query(
-                `INSERT INTO connection_requests (from_user_id, to_user_id, status)
+                `INSERT INTO public.connection_requests (from_user_id, to_user_id, status)
    VALUES ($1, $2, $3)`,
                 [from_user_id, to_user_id, status ]
             );
@@ -102,7 +102,7 @@ requestRouter.post('/request/review/:status/:conReqId', userAuth, async (req, re
     try {
         // Step 1: Find the connection request
         const result = await db.query(
-            `SELECT * FROM connection_requests 
+            `SELECT * FROM public.connection_requests 
              WHERE id = $1 AND to_user_id = $2 AND status = $3`,
             [conReqId, loggedInUser.id, 'interested']
         );
@@ -113,7 +113,7 @@ requestRouter.post('/request/review/:status/:conReqId', userAuth, async (req, re
 
         // Step 2: Update the status
         const updated = await db.query(
-            `UPDATE connection_requests 
+            `UPDATE public.connection_requests 
              SET status = $1 
              WHERE id = $2 
              RETURNING *`,

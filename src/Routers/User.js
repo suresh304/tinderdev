@@ -14,8 +14,8 @@ const db = req.app.locals.db
 
         const result = await db.query(
             `SELECT cr.*, u.first_name, u.last_name
-             FROM connection_requests cr
-             JOIN users u ON cr.from_user_id = u.id
+             FROM public.connection_requests cr
+             JOIN public.users u ON cr.from_user_id = u.id
              WHERE cr.to_user_id = $1 AND cr.status = $2`,
             [loggedInUser.id, 'interested']
         );
@@ -48,9 +48,9 @@ userRouter.get('/user/connections', userAuth, async (req, res) => {
                 u_to.first_name as to_first_name,
                 u_to.last_name as to_last_name,
                 u_to.photo_url as to_photo_url
-            FROM connection_requests cr
-            JOIN users u_from ON cr.from_user_id = u_from.id
-            JOIN users u_to ON cr.to_user_id = u_to.id
+            FROM public.connection_requests cr
+            JOIN public.users u_from ON cr.from_user_id = u_from.id
+            JOIN public.users u_to ON cr.to_user_id = u_to.id
             WHERE cr.status = 'accepted' 
               AND (cr.from_user_id = $1 OR cr.to_user_id = $1)
         `, [loggedInUserId]);
@@ -133,7 +133,7 @@ userRouter.get('/feed1', userAuth, async (req, res) => {
     const requestResult = await db.query(
       `
       SELECT from_user_id, to_user_id
-      FROM connection_requests
+      FROM public.connection_requests
       WHERE from_user_id = $1 OR to_user_id = $1
       `,
       [userId]

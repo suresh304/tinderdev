@@ -12,7 +12,7 @@ chatRouter.get('/chat/:targetUserId', userAuth, async (req, res) => {
     // 1. Find existing chat room between both users
     const chatRoomResult = await db.query(`
       SELECT cr.id
-      FROM chat_rooms cr
+      FROM public.chat_rooms cr
       WHERE (
         (cr.user1_id = $1 AND cr.user2_id = $2)
         OR
@@ -26,7 +26,7 @@ chatRouter.get('/chat/:targetUserId', userAuth, async (req, res) => {
     // 2. If no chat room found, create one
     if (chatRoomResult.rows.length === 0) {
       const insertResult = await db.query(`
-        INSERT INTO chat_rooms (user1_id, user2_id)
+        INSERT INTO public.chat_rooms (user1_id, user2_id)
         VALUES ($1, $2)
         RETURNING id
       `, [userId, targetUserId]);
@@ -50,7 +50,7 @@ chatRouter.get('/chat/:targetUserId', userAuth, async (req, res) => {
     ur.first_name AS receiver_first_name,
     ur.last_name AS receiver_last_name,
     ur.photo_url AS receiver_photo_url
-  FROM chat_messages m
+  FROM public.chat_messages m
   JOIN users us ON us.id = m.sender_id
   JOIN users ur ON ur.id = m.receiver_id
   WHERE m.chat_room_id = $1 
@@ -199,7 +199,7 @@ chatRouter.post('/chat/:targetUserId/:msgId', userAuth, async (req, res) => {
   try {
     // 1. Check if chat room exists between these users
     const chatRoomResult = await db.query(
-      `SELECT id FROM chat_rooms 
+      `SELECT id FROM public.chat_rooms 
        WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1) 
        LIMIT 1`,
       [userId, targetUserId]
@@ -216,7 +216,7 @@ chatRouter.post('/chat/:targetUserId/:msgId', userAuth, async (req, res) => {
 
     // 2. Check if message exists and belongs to that chat
     const messageResult = await db.query(
-      `SELECT * FROM chat_messages 
+      `SELECT * FROM public.chat_messages 
        WHERE id = $1 AND chat_room_id = $2`,
       [msgId, chatRoomId]
     );
@@ -230,7 +230,7 @@ chatRouter.post('/chat/:targetUserId/:msgId', userAuth, async (req, res) => {
 
     // 3. Check if already deleted for this user
     const checkDeletion = await db.query(
-      `SELECT 1 FROM message_deletions 
+      `SELECT 1 FROM public.message_deletions 
        WHERE message_id = $1 AND user_id = $2`,
       [msgId, userId]
     );
@@ -249,7 +249,7 @@ chatRouter.post('/chat/:targetUserId/:msgId', userAuth, async (req, res) => {
 
     for (const uid of deleteForUsers) {
       await db.query(
-        `INSERT INTO message_deletions (message_id, user_id) 
+        `INSERT INTO public.message_deletions (message_id, user_id) 
          VALUES ($1, $2)
          ON CONFLICT (message_id, user_id) DO NOTHING`,
         [msgId, uid]
