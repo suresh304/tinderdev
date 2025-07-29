@@ -6,7 +6,7 @@ const CommentRouter = express.Router();
 CommentRouter.post('/comments', userAuth,async (req, res) => {
   const db = req.app.locals.db;
   const { post_id, content, parent_comment_id } = req.body;
-  console.log(post_id)
+  console.log("CommentRouter.post('/comments', userAuth,>>>>>>",post_id,content,parent_comment_id)
   const user = req.user
   const user_id = user.id
 
@@ -39,8 +39,7 @@ CommentRouter.get('/comments/:postId', async (req, res) => {
 
   try {
     const query = `
-      WITH RECURSIVE public.nested_comments AS (
-        -- Base case: top-level comments
+      WITH RECURSIVE nested_comments AS (
         SELECT 
           c.id,
           c.post_id,
@@ -57,7 +56,6 @@ CommentRouter.get('/comments/:postId', async (req, res) => {
 
         UNION ALL
 
-        -- Recursive case: nested replies
         SELECT 
           c.id,
           c.post_id,
@@ -70,21 +68,21 @@ CommentRouter.get('/comments/:postId', async (req, res) => {
           nc.depth + 1
         FROM public.comments c
         JOIN public.users u ON u.id = c.user_id
-        JOIN public.nested_comments nc ON nc.id = c.parent_comment_id
+        JOIN nested_comments nc ON nc.id = c.parent_comment_id
         WHERE c.post_id = $1
       )
-      SELECT * FROM public.nested_comments
-      ORDER BY created_at ASC;
+      SELECT * FROM nested_comments
+      ORDER BY depth, created_at ASC;
     `;
 
     const result = await db.query(query, [postId]);
-
     res.status(200).json({ comments: result.rows });
   } catch (error) {
     console.error('Error fetching comments:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: 'Internal Server Error', message: error.message });
   }
 });
+
 
 
 // PATCH /comments/:id
