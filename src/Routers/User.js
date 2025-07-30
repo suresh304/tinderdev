@@ -13,12 +13,23 @@ const db = req.app.locals.db
         const loggedInUser = req.user;
 
         const result = await db.query(
-            `SELECT cr.*, u.first_name, u.last_name
-             FROM public.connection_requests cr
-             JOIN public.users u ON cr.from_user_id = u.id
-             WHERE cr.to_user_id = $1 AND cr.status = $2`,
-            [loggedInUser.id, 'interested']
-        );
+  `SELECT 
+      cr.*, 
+      from_user.first_name AS from_first_name,
+      from_user.last_name AS from_last_name,
+      from_user.photo_url AS from_photo_url,
+      to_user.first_name AS to_first_name,
+      to_user.last_name AS to_last_name,
+      to_user.photo_url AS to_photo_url
+   FROM public.connection_requests cr
+   JOIN public.users from_user ON cr.from_user_id = from_user.id
+   JOIN public.users to_user ON cr.to_user_id = to_user.id
+   WHERE 
+     (cr.to_user_id = $1 AND cr.status = $2) OR 
+     (cr.from_user_id = $1 AND cr.status != $3)`,
+  [loggedInUser.id, 'interested', 'accepted']
+);
+
 console.log(result.rows)
         res.json({ data: result.rows });
 
