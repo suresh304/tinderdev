@@ -1,16 +1,16 @@
+// index.js
 require('dotenv').config();
 const express = require('express');
-const path = require('path');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const http = require('http');
-const { initialiseSocketConnection } = require('./utils/socket');
 
 // PostgreSQL config
-const { Pool } = require('pg');
+const { Pool, Client } = require('pg');
+
+const { initialiseSocketConnection } = require('./utils/socket');
 
 // Routers & Middleware
-const { userAuth } = require('./middlewares/auth');
 const { authRouter } = require('./Routers/Auth');
 const { profileRouter } = require('./Routers/Profile');
 const { requestRouter } = require('./Routers/Requests');
@@ -24,18 +24,21 @@ const app = express();
 const PORT = 3001;
 
 // ✅ PostgreSQL Pool Connection
- const   pool = new Pool({
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: false, // or { rejectUnauthorized: false } if using SSL (like on Railway or Heroku)
+  ssl: false,
 });
 
-// Make the pool accessible via `req.app.locals`
+// ✅ Separate client for LISTEN/NOTIFY
+const pgListener = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: false,
+});
+
+// Attach db to app
 app.locals.db = pool;
 
-const allowedOrigins = [
-  'http://172.31.45.138',
-  'http://localhost:5173',
-];
+const allowedOrigins = ['http://172.31.45.138', 'http://localhost:5173'];
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -50,9 +53,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions)); 
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -62,24 +63,26 @@ app.use('/', profileRouter);
 app.use('/', requestRouter);
 app.use('/', userRouter);
 app.use('/', chatRouter);
-app.use('/',PostRouter);
+app.use('/', PostRouter);
 app.use('/', uploadRouter);
 app.use('/', CommentRouter);
 
-// Start server
+// Create HTTP server
 const server = http.createServer(app);
-initialiseSocketConnection(server);
 
-// Test the DB connection before starting the server
+// Start DB + Socket
 pool.connect()
   .then(client => {
     client.release();
-    console.log('✅ PostgreSQL connected successfully');
+    console.log('✅ PostgreSQL connected');
+
     server.listen(PORT, '0.0.0.0', () => {
-      console.log('🚀 Server is listening on port', PORT);
+      console.log('🚀 Server running on port', PORT);
     });
+
+    // ✅ Start socket + DB notification listener
+    initialiseSocketConnection(server, pool, pgListener);
   })
   .catch(err => {
-    console.error('❌ PostgreSQL connection failed:', err.message);
+    console.error('❌ PostgreSQL connection error:', err.message);
   });
-module.exports ={pool}

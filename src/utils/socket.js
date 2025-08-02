@@ -1,15 +1,47 @@
-const socket = require('socket.io')
+const socketIO = require('socket.io');
 
-const initialiseSocketConnection = (server) => {
-
-  const io = socket(server, {
+const initialiseSocketConnection = (server, pool, pgListener) => {
+  const io = socketIO(server, {
     cors: {
       origin: 'http://localhost:5173',
-      credentials: true
+      credentials: true,
+    },
+  });
 
+  // ✅ Listen to DB events
+  pgListener.connect()
+    .then(() => {
+      console.log('📡 pgListener connected');
+      return pgListener.query('LISTEN new_post');
+    })
+    .then(() => {
+      console.log('📡 Listening to NOTIFY channel: new_post');
+    })
+    .catch(err => console.error('pgListener error:', err));
+
+  pgListener.on('notification', async (msg) => {
+    try {
+      const payload = JSON.parse(msg.payload);
+     const post = await pool.query(`
+  SELECT 
+    u.first_name AS author,
+    u.id as user_id, 
+    p.content AS content, 
+    p.id AS post_id, 
+    p.media_url as photo_url,
+    p.created_at AS published_on
+  FROM users u
+  JOIN posts p ON u.id = p.user_id
+  WHERE p.id = $1 AND u.id = $2
+`, [payload.id, payload.user_id]);
+      io.emit('newPostCreated', post.rows[0]);
+      console.log('📢 Emitted newPostCreated:', payload);
+    } catch (err) {
+      console.error('❌ Failed to handle NOTIFY:', err);
     }
-  })
+  });
 
+  
   io.on("connection", (socket) => {
 
     // handle events
@@ -21,7 +53,7 @@ const initialiseSocketConnection = (server) => {
 
     })
 
-    const { pool } = require('../index') // your PostgreSQL pool
+    const { pool,pgListener } = require('../index') // your PostgreSQL pool
 
     socket.on("sendmessage", async ({ first_name, userId, targetUser, message }) => {
       console.log('hello>>>send message',)
@@ -94,7 +126,7 @@ const initialiseSocketConnection = (server) => {
 
     socket.on("typing", ({ data, userId, targetUser }) => {
       const room = [userId, targetUser].sort().join('$')
-      console.log("this is typing--------->", data,userId,targetUser)
+      console.log("this is typing--------->", data, userId, targetUser)
       io.to(room).emit('typingStatusRecieved', { data, senderId: userId, recieverId: targetUser })
     })
 
@@ -150,8 +182,8 @@ const initialiseSocketConnection = (server) => {
         // Step 6: Get all non-deleted messages for this user
         const updatedMessagesQuery = await pool.query(
           `SELECT m.*, 
-              s.first_name AS sender_first_name, s.last_name AS sender_last_name, s.photo_url AS sender_photo,
-              r.first_name AS receiver_first_name, r.last_name AS receiver_last_name, r.photo_url AS receiver_photo
+              s.first_name AS sender_first_name, s.last_name AS sender_last_name, s.photo_url AS sender_photo_url,
+              r.first_name AS receiver_first_name, r.last_name AS receiver_last_name, r.photo_url AS receiver_photo_url
        FROM chat_messages m
        JOIN users s ON m.sender_id = s.id
        JOIN users r ON m.receiver_id = r.id
@@ -205,14 +237,7 @@ const initialiseSocketConnection = (server) => {
       }
     });
 
-
-
-
-
-
-
-
-
+   
 
 
 
