@@ -53,7 +53,7 @@ const initialiseSocketConnection = (server, pool, pgListener) => {
 
     })
 
-    const { pool,pgListener } = require('../index') // your PostgreSQL pool
+    // const { pool,pgListener } = require('../index') // your PostgreSQL pool
 
     socket.on("sendmessage", async ({ first_name, userId, targetUser, message }) => {
       console.log('hello>>>send message',)
