@@ -41,7 +41,7 @@ profileRouter.put('/profile/edit', userAuth, async (req, res) => {
     const { first_name,last_name, about,age,photo_url } = req.body;
 
     const { rows } = await pool.query(
-      'UPDATE public.users SET first_name = $1, last_name=$2,about = $3, photo_url = $4,age = $5,updated_at = NOW() WHERE id = $6 RETURNING id, first_name, email_id, about',
+      'UPDATE public.users SET first_name = $1, last_name=$2,about = $3, photo_url = $4,age = $5,updated_at = NOW() WHERE id = $6 RETURNING id, first_name, email_id, about,photo_url',
       [first_name, last_name,about, photo_url,age,userId]
     );
 
