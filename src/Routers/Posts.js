@@ -58,6 +58,32 @@ PostRouter.post('/posts', userAuth, async (req, res) => {
 });
 
 
+PostRouter.delete('/posts', userAuth, async (req, res) => {
+
+  console.log("delete enter")
+  const { id } = req.body;
+  const user = req.user
+
+
+  try {
+    const db = req.app.locals.db;
+
+    const result = await db.query(
+      `DELETE from  public.posts where id = $1 and user_id = $2`, // returns the inserted row(s)
+      [id,user.id]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Post deleted successfully"
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 
 
 
